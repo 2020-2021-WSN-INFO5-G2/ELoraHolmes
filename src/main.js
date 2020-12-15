@@ -3,6 +3,21 @@ import App from "./App.vue";
 import router from "./router";
 import store from "./store";
 import vuetify from "./plugins/vuetify";
+import * as Vue2Leaflet from "vue2-leaflet";
+import { Icon } from "leaflet";
+import "leaflet/dist/leaflet.css";
+
+Vue.component("l-map", Vue2Leaflet.LMap);
+Vue.component("l-tile-layer", Vue2Leaflet.LTileLayer);
+Vue.component("l-marker", Vue2Leaflet.LMarker);
+
+//Marker fix
+delete Icon.Default.prototype._getIconUrl;
+Icon.Default.mergeOptions({
+  iconRetinaUrl: require("leaflet/dist/images/marker-icon-2x.png"),
+  iconUrl: require("leaflet/dist/images/marker-icon.png"),
+  shadowUrl: require("leaflet/dist/images/marker-shadow.png")
+});
 
 Vue.config.productionTip = false;
 
