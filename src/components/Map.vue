@@ -1,14 +1,7 @@
 <template>
   <div style="height: 500px; width: 100%">
     <div style="height: 200px overflow: auto;">
-      <p>First marker is placed at {{ withPopup.lat }}, {{ withPopup.lng }}</p>
-      <p>Center is at {{ currentCenter }} and the zoom is: {{ currentZoom }}</p>
-      <button @click="showLongText">
-        Toggle long popup
-      </button>
-      <button @click="showMap = !showMap">
-        Toggle map
-      </button>
+      <v-btn @click="showMap = !showMap">Toggle map</v-btn>
     </div>
     <l-map
       v-if="showMap"
@@ -20,29 +13,13 @@
       @update:zoom="zoomUpdate"
     >
       <l-tile-layer :url="url" :attribution="attribution" />
-      <l-marker :lat-lng="withPopup">
+      <l-marker v-for="(values, key) in features"
+        :key="key" :lat-lng="values">
         <l-popup>
-          <div @click="innerClick">
-            I am a popup
-            <p v-show="showParagraph">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque
-              sed pretium nisl, ut sagittis sapien. Sed vel sollicitudin nisi.
-              Donec finibus semper metus id malesuada.
-            </p>
+          <div>
+            {{key}}
           </div>
         </l-popup>
-      </l-marker>
-      <l-marker :lat-lng="withTooltip">
-        <l-tooltip :options="{ permanent: true, interactive: true }">
-          <div @click="innerClick">
-            I am a tooltip
-            <p v-show="showParagraph">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque
-              sed pretium nisl, ut sagittis sapien. Sed vel sollicitudin nisi.
-              Donec finibus semper metus id malesuada.
-            </p>
-          </div>
-        </l-tooltip>
       </l-marker>
     </l-map>
   </div>
@@ -50,26 +27,36 @@
 
 <script>
 import { latLng } from "leaflet";
+import axios from "axios";
 
 export default {
   name: "Map",
   components: {},
+  props: ["frames", "gateways"],
+  watch: {
+    frames: {
+      handler: function (newVal) {
+        console.log(newVal);
+        this.getFeatures();
+      },
+      deep: true,
+    },
+  },
   data() {
     return {
       zoom: 13,
+      features: {},
       center: latLng(47.41322, -1.219482),
       url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
       attribution:
         '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
-      withPopup: latLng(47.41322, -1.219482),
-      withTooltip: latLng(47.41422, -1.250482),
       currentZoom: 11.5,
       currentCenter: latLng(47.41322, -1.219482),
       showParagraph: false,
       mapOptions: {
-        zoomSnap: 0.5
+        zoomSnap: 0.5,
       },
-      showMap: true
+      showMap: true,
     };
   },
   methods: {
@@ -77,14 +64,36 @@ export default {
       this.currentZoom = zoom;
     },
     centerUpdate(center) {
-      this.currentCenter = center;
+      this.center = center;
     },
-    showLongText() {
-      this.showParagraph = !this.showParagraph;
+    getFeatures() {
+      for (var cle of Object.keys(this.frames)) {
+        if (this.frames[cle].length != 0) {
+          axios({
+            method: "post",
+            url: "http://localhost:3000/loracloud/singleframe",
+            headers: {
+              Accept: "application/json",
+              "Ocp-Apim-Subscription-Key": process.env.VUE_ENV_LORACLOUD_KEY,
+            },
+            data: {
+              device: cle,
+              gateways: this.gateways[cle],
+              frames: this.frames[cle],
+              params: {
+                locAlgType: "RSSI_ALG", // "TDOA_ALG" or "RSSI_ALG"
+                doRssiTdoaCombine: true,
+              },
+            },
+          }).then((res) => {
+            if (this.features[res.data.name] === undefined)
+                  this.features[res.data.name] = {};
+            this.features[res.data.name] = latLng(res.data.coordinates.latitude,res.data.coordinates.longitude);
+            this.centerUpdate(this.features[res.data.name]);
+          });
+        }
+      }
     },
-    innerClick() {
-      alert("Click!");
-    }
-  }
+  },
 };
 </script>
