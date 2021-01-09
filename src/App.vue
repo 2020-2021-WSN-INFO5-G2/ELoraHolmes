@@ -1,6 +1,7 @@
 <template>
   <v-app>
-    <v-app-bar app color="primary" dark>
+    <v-app-bar app color="deep-purple" dark>
+      <v-app-bar-nav-icon @click="drawer = true"></v-app-bar-nav-icon>
       <div class="d-flex align-center">
         <v-img
           alt="Vuetify Logo"
@@ -11,14 +12,9 @@
           width="40"
         />
 
-        <v-img
-          alt="Vuetify Name"
-          class="shrink mt-1 hidden-sm-and-down"
-          contain
-          min-width="100"
-          src="https://cdn.vuetifyjs.com/images/logos/vuetify-name-dark.png"
-          width="100"
-        />
+        <v-toolbar-title class="hidden-sm-and-down"
+          >ELora Holmes</v-toolbar-title
+        >
       </div>
 
       <v-spacer></v-spacer>
@@ -32,25 +28,53 @@
         <v-icon>mdi-open-in-new</v-icon>
       </v-btn>
     </v-app-bar>
+    <v-navigation-drawer
+      v-model="drawer"
+      absolute
+      temporary
+      style="z-index: 9999"
+    >
+      <v-list nav dense>
+        <v-list-item>
+          <v-list-item-icon>
+            <v-icon>mdi-devices</v-icon>
+          </v-list-item-icon>
+          <v-list-item-title>Devices</v-list-item-title>
+        </v-list-item>
+        <v-list-item-group
+          v-model="group"
+          active-class="deep-purple--text text--accent-4"
+        >
+          <v-list-item v-for="(values, key) in devices" :key="key">
+            <v-checkbox
+              v-model="devices[key]"
+              :label="key"
+              :value="values"
+            ></v-checkbox>
+          </v-list-item>
+          <v-list-item
+            ><v-btn depressed v-on:click="search">
+              Localiser
+            </v-btn></v-list-item
+          >
+        </v-list-item-group>
+      </v-list>
+    </v-navigation-drawer>
 
     <v-main>
-      <v-row>
-        <v-col cols="12" md="2">
-          <v-checkbox
-            v-for="(values, key) in devices"
-            :key="key"
-            v-model="devices[key]"
-            :label="key"
-            :value="values"
-          ></v-checkbox>
-          <v-btn depressed v-on:click="search"> Localiser </v-btn>
-        </v-col>
-
-        <v-col cols="12" md="10">
-          <Map :frames="frames" :gateways="gateways" />
-        </v-col>
-      </v-row>
+      <Map
+        :frames="frames"
+        :gateways="gateways"
+        :showError="showError"
+        :errorContent="errorContent"
+      />
     </v-main>
+    <v-footer padless>
+      <v-col class="text-center" cols="12">
+        {{ new Date().getFullYear() }} —
+        <strong>Myriam Lombard, Romain Pasdeloup</strong>
+      </v-col>
+    </v-footer>
   </v-app>
 </template>
 
@@ -62,58 +86,62 @@ export default {
   name: "App",
 
   components: {
-    Map,
+    Map
   },
 
   data() {
     return {
+      drawer: false,
+      group: null,
       devices: {
         "explorer-sherlock-board": false,
         "elora-sodaq-romain": false,
         "explorer-sherlock-nucleo": false,
-        devCartan: false,
+        devCartan: false
       },
       frames: {
         "explorer-sherlock-board": [],
         "elora-sodaq-romain": [],
         "explorer-sherlock-nucleo": [],
-        devCartan: [],
+        devCartan: []
       },
       gateways: {
         "explorer-sherlock-board": [],
         "elora-sodaq-romain": [],
         "explorer-sherlock-nucleo": [],
-        devCartan: [],
+        devCartan: []
       },
+      showError: false,
+      errorContent: ""
     };
   },
   methods: {
     search() {
+      this.showError = false;
+      this.errorContent = "";
       for (var [cle, valeur] of Object.entries(this.devices)) {
         let data = [];
         if (valeur) {
           axios
             .get("http://localhost:3000/devices/" + cle)
-            .then((response) => {
+            .then(response => {
               data = response.data;
-              data.forEach((element) => {
+              data.forEach(element => {
                 //DEBUG
                 if (element.metadata !== undefined)
                   console.log(element.metadata);
 
                 //Storing Gateways and Frames infos
-                if (this.gateways[element.dev_id] === undefined)
-                  this.gateways[element.dev_id] = [];
-                if (this.frames[element.dev_id] === undefined)
-                  this.frames[element.dev_id] = [];
+                this.gateways[element.dev_id] = [];
+                this.frames[element.dev_id] = [];
 
-                element.metadata.gateways.forEach((g) => {
+                element.metadata.gateways.forEach(g => {
                   if (g.latitude && g.altitude && g.longitude) {
                     this.gateways[element.dev_id].push({
                       gatewayId: g.gtw_id,
                       latitude: g.latitude,
                       longitude: g.longitude,
-                      altitude: g.altitude,
+                      altitude: g.altitude
                     });
                   }
                   if (g.rssi && g.snr) {
@@ -122,18 +150,34 @@ export default {
                       g.antenna || null,
                       g.timestamp || null,
                       g.rssi,
-                      g.snr,
+                      g.snr
                     ]);
                   }
                 });
               });
             })
-            .catch((err) => {
-              console.log(err);
+            .catch(err => {
+              this.showError = true;
+              this.errorContent += err + " (" + err.response.data.error + "). ";
             });
         }
       }
-    },
-  },
+      this.drawer = false;
+    }
+  }
 };
 </script>
+<style>
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+</style>
+<style scoped>
+#app {
+  display: flex;
+  flex-direction: column;
+}
+</style>

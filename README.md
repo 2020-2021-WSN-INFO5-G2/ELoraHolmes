@@ -5,6 +5,12 @@
 npm install
 ```
 
+### Create a `.env.local` file with the following content
+Put your Loracloud API Key as value.
+```
+VUE_APP_LORACLOUD_KEY=
+```
+
 ### Compiles and hot-reloads for development
 ```
 npm run serve
