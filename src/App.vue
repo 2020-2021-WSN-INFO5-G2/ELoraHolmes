@@ -57,6 +57,11 @@
               Localiser
             </v-btn></v-list-item
           >
+          <v-list-item
+            ><v-btn depressed v-on:click="stopsearching">
+              Arrêter la recherche
+            </v-btn></v-list-item
+          >
         </v-list-item-group>
       </v-list>
     </v-navigation-drawer>
@@ -125,7 +130,17 @@ export default {
           axios
             .get("http://localhost:3000/devices/" + cle)
             .then(response => {
-              data = response.data;
+              data = response.data.frames;
+              console.log(response.data)
+              axios({
+                  method: "post",
+                  url: "http://localhost:3000/devices/" + response.data.device,
+                  data: {
+                    ledstatus: true
+                  }
+                }).then(res => {
+                  console.log(res);
+                });
               data.forEach(element => {
                 //DEBUG
                 if (element.metadata !== undefined)
@@ -160,6 +175,22 @@ export default {
               this.showError = true;
               this.errorContent += err + " (" + err.response.data.error + "). ";
             });
+        }
+      }
+      this.drawer = false;
+    },
+    stopsearching() {
+      for (var [cle, valeur] of Object.entries(this.devices)) {
+        if (valeur) {
+          axios({
+            method: "post",
+            url: "http://localhost:3000/devices/" + cle,
+            data: {
+              ledstatus: false
+            }
+          }).then(res => {
+            console.log(res);
+          });
         }
       }
       this.drawer = false;
