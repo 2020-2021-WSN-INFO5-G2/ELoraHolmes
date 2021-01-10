@@ -106,8 +106,8 @@ export default {
             delete this.features[cle];
             this.center = latLng(45.187336, 5.7357);
             setTimeout(() => {
-                this.zoom = 15;
-              }, 500);
+              this.zoom = 15;
+            }, 500);
           }
         }
       }

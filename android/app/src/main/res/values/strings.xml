@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">eloraholmes</string>
+    <string name="title_activity_main">eloraholmes</string>
+    <string name="package_name">fr.info5.wsn</string>
+    <string name="custom_url_scheme">fr.info5.wsn</string>
+</resources>
