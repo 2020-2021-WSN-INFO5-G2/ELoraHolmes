@@ -1,18 +1,13 @@
 <template>
   <div id="map-wrapper">
     <v-alert type="error" v-if="showErr">{{ errContent }}</v-alert>
-    <!-- <div style="height: 300px overflow: auto;">
+    <!--
+    <div style="height: 300px overflow: auto;">
       <v-btn @click="showMap = !showMap">Toggle map</v-btn>
+      {{center}}
     </div>
     -->
-    <l-map
-      v-if="showMap"
-      :zoom="zoom"
-      :center="center"
-      :options="mapOptions"
-      @update:center="centerUpdate"
-      @update:zoom="zoomUpdate"
-    >
+    <l-map v-if="showMap" :zoom="zoom" :center="center" :options="mapOptions">
       <l-tile-layer :url="url" :attribution="attribution" />
       <l-marker v-for="(values, key) in features" :key="key" :lat-lng="values">
         <l-popup>
@@ -54,15 +49,15 @@ export default {
   },
   data() {
     return {
-      zoom: 13,
+      zoom: 15,
       features: {},
-      center: latLng(47.41322, -1.219482),
+      center: latLng(45.187336, 5.7357),
       url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
       attribution:
         '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
       showParagraph: false,
       mapOptions: {
-        zoomSnap: 0.5
+        //zoomSnap: 0.5,
       },
       showMap: true,
       showErr: false,
@@ -70,15 +65,10 @@ export default {
     };
   },
   methods: {
-    zoomUpdate(zoom) {
-      this.Zoom = zoom;
-    },
-    centerUpdate(center) {
-      this.center = center;
-    },
     getFeatures() {
       for (var cle of Object.keys(this.frames)) {
-        if (this.frames[cle].length != 0) {
+        if (this.frames[cle].length > 0) {
+          console.log("Feature to display : " + cle);
           axios({
             method: "post",
             url: "http://localhost:3000/loracloud/singleframe",
@@ -102,13 +92,23 @@ export default {
                 res.data.coordinates.latitude,
                 res.data.coordinates.longitude
               );
-              this.centerUpdate(this.features[res.data.name]);
-              this.zoomUpdate(18);
+              this.center = this.features[res.data.name];
+              setTimeout(() => {
+                this.zoom = 18;
+              }, 500);
             })
             .catch(err => {
               this.showErr = true;
               this.errContent += err + " (" + err.response.data.error + "). ";
             });
+        } else {
+          if (this.features[cle]) {
+            delete this.features[cle];
+            this.center = latLng(45.187336, 5.7357);
+            setTimeout(() => {
+                this.zoom = 15;
+              }, 500);
+          }
         }
       }
     }

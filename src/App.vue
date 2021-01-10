@@ -102,19 +102,19 @@ export default {
         "explorer-sherlock-board": false,
         "elora-sodaq-romain": false,
         "explorer-sherlock-nucleo": false,
-        devCartan: false
+        "fake-device": false
       },
       frames: {
         "explorer-sherlock-board": [],
         "elora-sodaq-romain": [],
         "explorer-sherlock-nucleo": [],
-        devCartan: []
+        "fake-device": []
       },
       gateways: {
         "explorer-sherlock-board": [],
         "elora-sodaq-romain": [],
         "explorer-sherlock-nucleo": [],
-        devCartan: []
+        "fake-device": []
       },
       showError: false,
       errorContent: ""
@@ -131,21 +131,16 @@ export default {
             .get("http://localhost:3000/devices/" + cle)
             .then(response => {
               data = response.data.frames;
-              console.log(response.data)
               axios({
-                  method: "post",
-                  url: "http://localhost:3000/devices/" + response.data.device,
-                  data: {
-                    ledstatus: true
-                  }
-                }).then(res => {
-                  console.log(res);
-                });
+                method: "post",
+                url: "http://localhost:3000/devices/" + response.data.device,
+                data: {
+                  ledstatus: true
+                }
+              }).then(res => {
+                console.log("LED Up: " + res.data.message);
+              });
               data.forEach(element => {
-                //DEBUG
-                if (element.metadata !== undefined)
-                  console.log(element.metadata);
-
                 //Storing Gateways and Frames infos
                 this.gateways[element.dev_id] = [];
                 this.frames[element.dev_id] = [];
@@ -182,6 +177,8 @@ export default {
     stopsearching() {
       for (var [cle, valeur] of Object.entries(this.devices)) {
         if (valeur) {
+          this.gateways[cle] = [];
+          this.frames[cle] = [];
           axios({
             method: "post",
             url: "http://localhost:3000/devices/" + cle,
@@ -189,7 +186,7 @@ export default {
               ledstatus: false
             }
           }).then(res => {
-            console.log(res);
+            console.log("LED Down: " + res.data.message);
           });
         }
       }
